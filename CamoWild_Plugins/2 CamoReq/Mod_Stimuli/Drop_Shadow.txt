@@ -1,0 +1,62 @@
+
+
+setBatchMode(true);
+
+
+image=getTitle();
+
+Dialog.createNonBlocking("Shadow_Settings");
+
+Dialog.addMessage("Shadow Offset from centre"); 
+Dialog.addNumber("X_Offset", 0);
+Dialog.addNumber("Y_Offset", 0);
+
+Dialog.addMessage("Shadow Scaling. \n Size = num of pixel increase in scale \n Power = power value  \n Intensity = strength"); 
+
+Dialog.addNumber("Scale", 5);
+Dialog.addNumber("Power", 1);
+Dialog.addNumber("Intensity", 25);
+
+Dialog.show();
+
+
+ShadowX = Dialog.getNumber();
+ShadowY = Dialog.getNumber();
+
+ShadowS = Dialog.getNumber();
+ShadowG = Dialog.getNumber();
+ShadowI = Dialog.getNumber();
+
+
+roiManager("Add");
+roiManager("Select", roiManager("count")-1);
+Roi.getBounds(ox, oy, width, height);
+x=ox+width/2;
+y=oy+height/2;
+
+
+
+run("Copy");
+setPasteMode("Copy");
+
+jMax=ShadowS;
+
+Roi.move(ox+ShadowX,oy+ShadowY);
+
+for(j=0;j<jMax;j++){
+
+sV = 1+ 1/100*j;
+sM = ShadowI*(1-(pow(j/jMax, ShadowG)));
+
+run("Enlarge...", "enlarge=1");
+
+run("Subtract...","value=sM");
+
+
+}
+
+roiManager("Select", roiManager("count")-1);
+run("Paste");
+
+
+roiManager("delete");

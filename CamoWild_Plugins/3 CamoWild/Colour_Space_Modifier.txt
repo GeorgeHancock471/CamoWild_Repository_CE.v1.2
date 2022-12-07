@@ -1,0 +1,135 @@
+//Temp Holdings
+//----------------------------------
+PopLocal = getDirectory("plugins") + "3 CamoWild/PopLocation.txt";
+PopLocation = File.openAsString(PopLocal);
+PopLocation=split(PopLocation, "\n");
+PopLocation = PopLocation[0];
+PopLocation = PopLocation;
+
+PopulationSet = PopLocation+"PopulationSettings.txt";
+PopulationSettings = File.openAsString(PopulationSet );
+PopulationSettings = split(PopulationSettings, "\n");
+ColourSpace = split(PopulationSettings[2], "\t");
+
+
+
+lMin = parseFloat(ColourSpace[1]);
+lMax = parseFloat(ColourSpace[2]);
+
+aMin = parseFloat(ColourSpace[3]);
+aMax = parseFloat(ColourSpace[4]);
+
+bMin = parseFloat(ColourSpace[5]);
+bMax = parseFloat(ColourSpace[6]);
+
+generationString = File.openAsString(PopLocation +"gen_0_genes.txt");
+
+
+
+
+//Open Generation 0
+//----------------------------------
+
+generationRows = split(generationString, "\n");
+
+geneLabels = split(generationRows[0], "\t");
+
+
+
+//Find Gene Indexes
+//----------------------------------
+
+
+LGenes = newArray();
+AGenes = newArray();
+BGenes = newArray();
+
+for(i=0; i<geneLabels.length; i++){
+tStr = geneLabels[i];
+if(endsWith(tStr, "L") || endsWith(tStr, "_lmv"))
+LGenes = Array.concat(LGenes, i );
+
+if(endsWith(tStr, "A") || endsWith(tStr, "_rgv"))
+AGenes = Array.concat(AGenes,i );
+
+if(endsWith(tStr, "B") || endsWith(tStr, "_byv"))
+BGenes = Array.concat(BGenes, i );
+
+}
+
+
+
+
+
+//Calculate Conversion
+//----------------------------------
+
+Lrange = (lMax - lMin)/100;
+Arange =  (aMax - aMin)/200;
+Brange =  (bMax - bMin)/200;
+
+Lbase = (lMin)/100;
+Abase = (aMin+100)/200;
+Bbase = (bMin+100)/200;
+
+//nVal = tVal*Lrange + Lbase;
+
+generationRowsNew = Array.copy(generationRows);
+
+//Convert L Values
+//----------------------------------
+for(i=1; i<generationRows.length; i++){
+tArray = split(generationRowsNew[i], "\t");
+for(j =0; j<LGenes.length; j++){
+tIndex = LGenes[j];
+oldVal = parseFloat( tArray[tIndex] );
+newVal = oldVal * Lrange + Lbase;
+tArray[tIndex] =newVal;
+} // ( j )
+tStr = String.join(tArray, "\t");
+generationRowsNew[i] = tStr;
+} // ( i )
+
+
+//Convert A Values
+//----------------------------------
+for(i=1; i<generationRows.length; i++){
+tArray = split(generationRowsNew[i], "\t");
+for(j =0; j<AGenes.length; j++){
+tIndex = AGenes[j];
+oldVal = parseFloat( tArray[tIndex] );
+newVal = oldVal * Arange + Abase;
+tArray[tIndex] =newVal;
+} // ( j )
+tStr = String.join(tArray, "\t");
+generationRowsNew[i] = tStr;
+} // ( i )
+
+
+
+//Convert B Values
+//----------------------------------
+for(i=1; i<generationRows.length; i++){
+tArray = split(generationRowsNew[i], "\t");
+for(j =0; j<BGenes.length; j++){
+tIndex = BGenes[j];
+oldVal = parseFloat( tArray[tIndex] );
+newVal = oldVal * Brange + Bbase;
+tArray[tIndex] =newVal;
+} // ( j )
+tStr = String.join(tArray, "\t");
+generationRowsNew[i] = tStr;
+} // ( i )
+
+
+
+dataFile = File.open(PopLocation +"generation_0.txt");
+
+for(i=0; i<generationRowsNew.length;i++){
+print(dataFile, generationRowsNew[i]);
+}
+
+File.close(dataFile);
+
+
+

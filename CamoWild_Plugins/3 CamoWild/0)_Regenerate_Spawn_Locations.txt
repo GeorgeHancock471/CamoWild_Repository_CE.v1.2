@@ -1,0 +1,141 @@
+populationDir = getDirectory("Select the Population you wish to create locations for");
+
+
+GeneratList  =  getFileList(populationDir);
+GeneratArray = newArray();
+GenSurvArray  = newArray();
+
+for(i=0; i<GeneratList.length; i++) { // list all .txt files
+
+	if(endsWith(GeneratList[i], "_genes.txt")==1){
+		GeneratArray = Array.concat(GeneratArray, GeneratList[i]);
+	}	
+
+	if(endsWith(GeneratList[i], "_ranks.txt")==1){
+		GenSurvArray = Array.concat(GenSurvArray, GeneratList[i]);
+	}											
+		
+}
+
+CheckDirectory = populationDir;
+
+genNum = GeneratArray.length-1;
+
+
+
+popSettings = File.openAsString(populationDir + "PopulationSettings.txt");
+popSettRows = split(popSettings, "\n");
+
+Array.show(popSettRows);
+
+groupSize = split(popSettRows[7], "\t");
+
+
+groupSize = parseFloat(groupSize[1]);
+
+
+printerString = File.openAsString(populationDir + "Printer_"+genNum+".txt");
+printerRows = split(printerString, "\n");
+
+printIDs = newArray(printerRows.length-1);
+for(i=0;i<printIDs.length;i++){
+tArray = split(printerRows[i+1]);
+printIDs[i] = tArray[1];
+}
+
+
+//Get Gen IDs
+//--------------------------------
+GeneratList  =  getFileList(populationDir);
+GeneratArray = newArray();
+GenSurvArray  = newArray();
+
+for(i=0; i<GeneratList.length; i++) { // list all .txt files
+
+	if(endsWith(GeneratList[i], "_genes.txt")==1){
+		GeneratArray = Array.concat(GeneratArray, GeneratList[i]);
+	}	
+
+	if(endsWith(GeneratList[i], "_ranks.txt")==1){
+		GenSurvArray = Array.concat(GenSurvArray, GeneratList[i]);
+	}											
+		
+}
+
+genNum = GeneratArray.length-1;
+currentGen = "gen_"+genNum+"_genes.txt";
+currentGenPath = populationDir + currentGen;
+
+
+
+
+//Save Spawn Locations
+//--------------------------------
+
+colourCode= newArray("R","G","B","Y","C","M","O","P","W","E");
+colourCodeArray = Array.copy(colourCode);
+
+spawnX = newArray();
+spawnY = newArray();
+spawnCol = colourCodeArray;
+spawnGroup = newArray(printIDs.length/groupSize);
+
+gridX = newArray(1,2,3,4,5);
+gridY = newArray(1,2,3,4,5);
+
+
+	dataFile = File.open(populationDir+"SpawnLocation_"+genNum+".txt");
+	
+	for(i=0; i<spawnGroup.length; i++){
+	
+	gridX2 = Array.deleteIndex( gridX, parseInt(random()*(gridX.length-1) ) );
+	
+	saveArray=newArray();
+	
+	xRecord = newArray();
+	yRecord = newArray();
+	
+		for(j=0; j<groupSize; j++){
+		
+		pointX = gridX2[j];
+		
+		pointY = gridY[parseInt(random()*(gridY.length-1))];
+		
+		Gate=1;
+		
+		while(Gate==1 && j>0){
+		
+		pointY = gridY[random()*(gridY.length-1)];
+		
+		difY = Math.sqrt( Math.sqr( pointY - yRecord[j-1] ) );
+		
+		if(difY>1) Gate=0;
+		
+		}
+		
+		tStr = spawnCol[j]  + "." + pointX  + "." +  pointY;
+		
+		saveArray = Array.concat(saveArray, tStr );
+		
+		xRecord = Array.concat(xRecord,pointX);
+		
+		yRecord = Array.concat(yRecord,pointY);
+		
+		}
+	
+	saveArray = Array.concat("Group: "+i+1, saveArray);
+	
+	saveStr =  String.join(saveArray, "\t");
+	
+	print(dataFile, saveStr);
+	}
+	
+	
+	File.close(dataFile);
+
+
+
+
+
+
+

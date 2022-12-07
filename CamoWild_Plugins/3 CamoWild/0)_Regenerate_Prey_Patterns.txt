@@ -1,0 +1,152 @@
+
+Dialog.create("");
+	Dialog.addMessage("Step 1, Select Population");
+Dialog.show();
+
+populationDir = getDirectory("Select the Population you wish to upload the rankings to");
+
+dataFile = File.open(getDirectory("plugins") +"3 CamoWild/PopLocation.txt");
+print(dataFile, populationDir);
+File.close(dataFile);
+
+
+GeneratList  =  getFileList(populationDir);
+GeneratArray = newArray();
+GenSurvArray  = newArray();
+
+for(i=0; i<GeneratList.length; i++) { // list all .txt files
+
+	if(endsWith(GeneratList[i], "_genes.txt")==1){
+		GeneratArray = Array.concat(GeneratArray, GeneratList[i]);
+	}	
+
+	if(endsWith(GeneratList[i], "_ranks.txt")==1){
+		GenSurvArray = Array.concat(GenSurvArray, GeneratList[i]);
+	}											
+		
+}
+
+CheckDirectory = populationDir;
+
+genNum = GeneratArray.length-1;
+currentGen = "gen_"+genNum+"_genes.txt";
+currentGenPath = populationDir + currentGen;
+currentSurv = "gen_"+genNum+"_ranks.txt";
+currentSurvPath = populationDir +currentSurv;
+
+GenNumber = genNum;
+fold = "GenPat_" +GenNumber;
+foldOld = "GenPat_" + genNum;
+PatternPath = CheckDirectory + fold;
+PriorPath = CheckDirectory + foldOld;
+
+CheckDirectory = populationDir;
+
+
+GenNum = CheckDirectory + "gen_" + GenNumber + "_genes.txt";
+GenName = "gen_" + GenNumber + "_genes.txt";
+SurvGenNum= CheckDirectory + "gen_" + GenNumber +"_ranks"+ ".txt";
+
+
+GeneratList  =  getFileList(populationDir);
+GeneratArray = newArray();
+GenSurvArray  = newArray();
+
+for(i=0; i<GeneratList.length; i++) { // list all .txt files
+
+	if(endsWith(GeneratList[i], "_genes.txt")==1){
+		GeneratArray = Array.concat(GeneratArray, GeneratList[i]);
+	}	
+
+	if(endsWith(GeneratList[i], "_ranks.txt")==1){
+		GenSurvArray = Array.concat(GenSurvArray, GeneratList[i]);
+	}											
+		
+}
+
+
+
+
+//Patterns
+//------------------------------------------------------------------------------
+
+
+GenerationString=File.openAsString(GenNum);	// open txt data file
+GenerationRows=split(GenerationString, "\n");
+
+
+PatternTemplate =  getDirectory("plugins") + "3 CamoWild/PopulationTemplate.txt";
+setBatchMode(true);	
+
+notMade=newArray();
+
+for(i=1; i<GenerationRows.length; i++){
+Temp = split(GenerationRows[i], "\t");
+Temp = Temp[0];
+patternGet = PriorPath + "/" + Temp + ".png";
+
+
+if(File.exists(patternGet) == 1){
+	while(!isOpen(Temp + ".png")){
+	open(patternGet);
+}
+
+selectImage(Temp + ".png");
+
+title = getTitle();
+newName = replace (title, ".png", "");
+rename(newName);
+
+
+} else {
+	str=GenerationRows[i];
+	notMade=Array.concat(notMade,str);
+}
+
+
+
+}
+
+
+
+dataFile = File.open(PatternTemplate);  // writes the pattern genome to a temporary text file, which the target generator then uses.
+
+	print(dataFile, GenerationRows[0]);
+	
+	for(i=0; i<notMade.length; i++){
+	print(dataFile, notMade[i]);
+	
+	}
+	File.close(dataFile);
+
+
+
+run("Generate Prey Patterns");
+
+
+
+
+// Save
+//------------------------------------------------------------------------------
+WinNam = getList("image.titles");
+Win = lengthOf(WinNam);
+
+File.makeDirectory( PatternPath);
+
+for ( p=0; p<Win; p++ ) { 
+
+pat = "/" + WinNam[p] + ".png";
+
+SavePath =PatternPath + pat;
+
+selectWindow(WinNam[p]);
+if(startsWith(WinNam[p], "Gen")){
+
+saveAs("PNG", SavePath); 
+
+close(WinNam[p]+".png");
+
+}
+}
+
+

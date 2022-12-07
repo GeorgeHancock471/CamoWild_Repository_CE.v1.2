@@ -1,0 +1,704 @@
+setBatchMode(true);
+
+// Defaults
+//.......................................................
+
+defaultSettings = newArray(
+
+"2", 				// TreatmentNumber
+"3", 				// RepeatNumber
+"Random", 			// startType
+"Camo", 			// Colour Space
+"4", 				// GroupSize
+"Random", 				// GroupMethod
+"400", 				// TargetSize
+"Default_Circle",	// TargetShape
+"4	60	60	1"		// Dimensions
+ );					
+ 
+
+
+settingsFilePath = getDirectory("plugins") + "3 CamoWild/Setup_Defaults.txt";
+if(File.exists(settingsFilePath) == 1){
+	settingsString=File.openAsString(settingsFilePath);	// open txt data file
+	tempSettings=split(settingsString, "\n");
+	
+	if(tempSettings.length == defaultSettings.length) defaultSettings = tempSettings;
+} 
+
+
+//.......................................................................
+
+
+
+setPasteMode("copy");
+
+
+// i) Choose Storage Location
+//-------------------------------------------------
+//...........................................................................................................................................................................
+
+Dialog.create("");
+	Dialog.addMessage("Step 1, Select Location");
+Dialog.show();
+
+populationDir = getDirectory("Select Where you'd Like to Store Your Populations");
+
+camoWildExpDir = populationDir + "camoWildExp/";
+
+File.makeDirectory(camoWildExpDir);
+
+
+// ii) Choose Experiment Settings
+//-------------------------------------------------
+//...........................................................................................................................................................................
+
+
+startPopArray = newArray("Random", "Matched","Shared");
+
+Dialog.createNonBlocking("Step 2, Experiment Settings Part 1");
+Dialog.addMessage(    ".........................................................\nAssign Values to the following:\n.........................................................");
+	Dialog.addMessage(" (i) Number of Treatments:\n ----------------------------------------\nChoose how many treatments (e.g. habitats) you'd like to use?");
+	Dialog.addNumber("           Treatments", parseFloat(defaultSettings[0]) );
+	Dialog.addMessage("(ii) Number of Repeats:\n ----------------------------------------\nChoose how many repeats per treatment (e.g. habitats) you'd like to use?");
+	Dialog.addNumber("           Repeats", parseFloat(defaultSettings[1]));
+	Dialog.addMessage("(iii) Starting Population:\n ----------------------------------------\nChoose which format you'd like to use for the starting population?\n \n    Random: all populations are randomly generated, no treatment has the same population.\n    Matched: each repeat has a different starting population, shared across all treatments.\n    Shared: all treatments and repeats share the exact same starting population.");
+	Dialog.addChoice("          Populations",startPopArray, defaultSettings[2]);
+Dialog.show();
+
+treatmentNumber = Dialog.getNumber();
+repeatNumber = Dialog.getNumber();
+startType =  Dialog.getChoice();
+
+popSize = newArray();
+for(i=1;i<12;i++){
+popSize=Array.concat(popSize, i*8);
+}
+
+colourRangeArray = newArray("Full", "Camo", "Measure", "Custom");
+groupMethodArray = newArray("Random", "Ranked");
+
+
+Target_Settings = File.openAsString(getDirectory("plugins") +"1 CamoEvo/Targets/Target_Settings.txt");
+Target_Rows=split(Target_Settings, "\n");
+targetChoices = newArray(Target_Rows.length-1);
+
+for(i=0;i<targetChoices.length;i++){
+
+tArray = split(Target_Rows[i+1], "\t");
+if(tArray.length>1){
+tString = tArray [0];
+targetChoices[i] = tString;
+}
+}
+
+
+defaultSheetLayout = split(defaultSettings[8],"\t");
+
+
+Dialog.createNonBlocking("Step 2, Experiment Settings Part 2");
+	Dialog.addMessage(" (iv) Colour Distribution:\n ----------------------------------------\nChoose what starting range of colours you'd like to use?\n \n    Full: the full range of possible colours.\n    Camo: the range used by CamoEvo.\n    Measure: Mean +- 2 x StdDev for a sample image.\n    Custom: a custom range that you enter for each treatment. \n \n  NOTE1: Measure and Custom require you to have the image/values ready. \n  NOTE2: Only one Custom/Measure Setting if start pop is Matched/Shared.");
+	Dialog.addChoice("          Colour",colourRangeArray, defaultSettings[3]);
+
+	Dialog.addMessage(" (v) Group Size:\n ----------------------------------------\nHow many individuals are shown together, if individuals are all independent put 1.");
+	Dialog.addNumber("           Group Size", parseFloat(defaultSettings[4]));
+
+	Dialog.addMessage(" (vi) Grouping Method:\n ----------------------------------------\nHow are individuals assiged to groups?\n \n    Random: individuals are randomly assigned.\n    Ranked: each group has an even distribution of individual fitnesses.\n    Disassortative: individuals are grouped dissassortatively by genotype.");
+	Dialog.addChoice("            Grouping",groupMethodArray, defaultSettings[5]);
+
+	Dialog.addMessage(" (vii) Target Size (px):\n ----------------------------------------\nHow large do you want the targets (prey) to be?");
+	Dialog.addNumber("           Target Size", parseFloat(defaultSettings[6]), 0, 6, " px");
+	
+	Dialog.addMessage(" (viii) Target Shape:\n ----------------------------------------\nwhat shape do you want the targets (prey) to be?");
+	Dialog.addChoice("           Target Shape",  targetChoices, defaultSettings[7]);
+
+Dialog.show();
+
+colourMethod =  Dialog.getChoice();
+groupSize =  Dialog.getNumber();
+groupMethod =  Dialog.getChoice();
+targetSize =  Dialog.getNumber();
+targetShape =  Dialog.getChoice();
+
+Dialog.createNonBlocking("Step 2, Experiment Settings Part 3");
+
+	Dialog.addMessage(" (iV) Sheet Layout:\n ----------------------------------------\nhow do you want the printer sheet arranged?");
+	Dialog.addNumber("        Targets Per Row:",  defaultSheetLayout[0] );
+	Dialog.addNumber("       Row Spacing (px):",  defaultSheetLayout[1] );
+	Dialog.addNumber("    Column Spacing (px):",  defaultSheetLayout[2] );
+	Dialog.addNumber("       Copies Per Sheet:",  defaultSheetLayout[3] );
+	
+Dialog.show();
+	
+
+
+
+targetsPerRow = Dialog.getNumber();
+xSpace = Dialog.getNumber();
+ySpace = Dialog.getNumber();
+nCopies = Dialog.getNumber();
+
+dimensionArray = newArray(targetsPerRow, xSpace, ySpace, nCopies);
+dimensionString = String.join(dimensionArray, "\t");
+
+// Save 
+dataFile = File.open(settingsFilePath);
+
+print(dataFile, treatmentNumber);
+print(dataFile, repeatNumber);
+print(dataFile,startType);
+
+print(dataFile, colourMethod);
+print(dataFile, groupSize);
+print(dataFile, groupMethod);
+print(dataFile, targetSize);
+print(dataFile, dimensionString);
+
+File.close(dataFile);
+
+
+FullArray = newArray(0, 100, -100, 100, -100, 100);
+CamoArray = newArray(10, 85, -30, 30, -5, 50);
+colourSpace = newArray();
+
+if(colourMethod == "Full"){
+for(i=0; i< treatmentNumber; i++){
+colourSpace = Array.concat(colourSpace,FullArray); 
+}
+}
+
+
+if(colourMethod == "Camo"){
+for(i=0; i< treatmentNumber; i++){
+colourSpace = Array.concat(colourSpace,CamoArray); 
+}
+}
+
+
+
+// iii) Assign Treatment Names
+//-------------------------------------------------
+//...........................................................................................................................................................................
+TLeng = treatmentNumber;
+RLeng = repeatNumber;
+
+listTreatments = newArray(TLeng);
+
+for(z = 0; z< floor(TLeng/15)+1; z++){
+
+dialogTitle = "Step 3, enter treatment names Part ("+z+1+"/" +floor(TLeng/15)+1+")";
+
+Dialog.createNonBlocking(dialogTitle);
+
+startVal = ((z)*15);
+endVal = startVal +15;
+if(endVal>TLeng){
+endVal = TLeng;
+}
+
+	Dialog.addMessage("Give a name for each treatment, e.g. Habitat1");
+	for(k=startVal; k<endVal ; k++)	{
+	Label = "Treatment "+ k + 1 +":";
+	Dialog.addString(Label, "Habitat"+k+1,20);
+					}
+	Dialog.show();
+
+	
+	for(k=startVal; k<endVal ; k++)	{
+	listTreatments[k] = Dialog.getString();
+	}
+
+
+}
+
+
+// iv) Assign Colour Ranges (optional)
+//-------------------------------------------------
+//...........................................................................................................................................................................
+if(colourMethod == "Measure"){
+for(z=0; z<listTreatments.length; z++){
+
+			if(z==0 || startType =="random"){
+			dialogTitle = "Open reference image for " + listTreatments[z];
+
+
+			colourHappyGate = 0;
+
+
+			lMin =0;
+			lMax = 100;
+			aMin = -100;
+			aMax = 100;
+			bMin = -100;
+			bMax =100;
+
+
+			while(colourHappyGate==0){
+			if(isOpen("ColourSpace")){
+			close("ColourSpace");
+			}
+	
+			
+			Dialog.createNonBlocking(dialogTitle);
+					Dialog.addMessage("Upload a reference image for this treatment");
+					Dialog.addMessage("The image should be a good representation of the habitat");
+			Dialog.show();
+			
+			
+			setBatchMode(true);
+			chosenReference = File.openDialog("Select Image");
+			open(chosenReference);
+			rename("referenceImage");
+			run("Lab Stack");
+			
+			//L
+			setSlice(1);
+			getStatistics(area, mean, min, max, std, histogram);
+			lMin = mean - std*2;
+			lMax = mean + std*2;
+
+			//A
+			setSlice(2);
+			getStatistics(area, mean, min, max, std, histogram);
+			aMin = mean - std*2;
+			aMax = mean + std*2;
+			
+			//B
+			setSlice(3);
+			getStatistics(area, mean, min, max, std, histogram);
+			bMin = mean - std*2;
+			bMax = mean + std*2;			
+
+			close("referenceImage");
+
+			// Canvas A* B*
+			//=================================
+			newImage("col", "32-bit black", 500, 500, 3);
+			setSlice(1);
+			run("Set...", "value=50");
+
+
+			setSlice(2);
+			for(i=0; i<500;i++){
+
+			tStr = i/500;
+			tStr = tStr*(aMax-aMin) + aMin;
+			setColor(tStr);
+			fillRect(i,0,1,500);
+			}
+
+
+
+			setSlice(3);
+			for(i=0; i<500;i++){
+
+			tStr = i/500;
+			tStr = tStr*(bMax-bMin) + bMin;
+
+			setColor(tStr);
+			fillRect(0,i,500,1);
+			}
+
+
+
+			run("CIELAB 32Bit to RGB24 smooth");
+			rename("A* B* Space");
+			close("col");
+
+
+			// Canvas Luminance
+			//=================================
+			newImage("col", "32-bit black", 50, 500, 3);
+			setSlice(2);
+			run("Set...", "value=0");
+			setSlice(3);
+			run("Set...", "value=0");
+
+			setSlice(1);
+			for(i=0; i<500;i++){
+
+			tStr = i/500;
+			tStr = (1-tStr);
+			tStr = tStr*(lMax-lMin) + lMin;
+			setColor(tStr);
+			fillRect(0,i,50,1);
+			}
+
+			run("CIELAB 32Bit to RGB24 smooth");
+			rename("L* Space");
+			close("col");
+
+			newImage("ColourSpace", "RGB black", 625, 550, 1);
+				setLineWidth(2);
+				setColor("white");
+				selectImage("L* Space");
+				run("Copy");
+				selectImage("ColourSpace");
+				makeRectangle(550,25, 50, 500);
+				run("Paste");
+				drawRect(550,25, 50, 500);
+
+				selectImage("A* B* Space");
+				run("Copy");
+				selectImage("ColourSpace");
+				makeRectangle(25,25, 500, 500);
+				run("Paste");
+				drawRect(25,25, 500, 500);
+
+			run("Select None");
+			close("A* B* Space");
+			close("L* Space");
+
+			setBatchMode("Show");
+
+			colourHappyGate = getBoolean("Are you happy with this colour space?", "Yes", "No, try again");
+			}
+			} // (repat ask if)
+			colourSpace = Array.concat(colourSpace,lMin,lMax,aMin,aMax,bMin,bMax); 
+
+			} //(loop)
+			if(isOpen("ColourSpace")){
+			close("ColourSpace");
+			}
+
+}
+if(colourMethod == "Custom"){
+for(z=0; z<listTreatments.length; z++){
+
+			if(z==0 || startType =="random"){
+			dialogTitle = "Assign Colour Space for " + listTreatments[z];
+
+
+			colourHappyGate = 0;
+
+
+			lMin =0;
+			lMax = 100;
+			aMin = -100;
+			aMax = 100;
+			bMin = -100;
+			bMax =100;
+
+
+			while(colourHappyGate==0){
+			if(isOpen("ColourSpace")){
+			close("ColourSpace");
+			}
+
+			Dialog.createNonBlocking(dialogTitle);
+					Dialog.addMessage("NOTE, you can type the values");
+					Dialog.addMessage("Luminance");
+					Dialog.addSlider("        L Min ", 0, 100, lMin);
+					Dialog.addSlider("        L Max ", 0, 100, lMax);
+
+					Dialog.addMessage("a* Green-Red");
+					Dialog.addSlider("        a Min ", -100, 100, aMin );
+					Dialog.addSlider("        a Max",-100, 100,  aMax);
+
+					Dialog.addMessage("b* Blue-Yellow");
+					Dialog.addSlider("        b Min ",-100, 100,  bMin);
+					Dialog.addSlider("        b Max ",-100, 100,  bMax);
+			Dialog.show();
+
+
+			lMin = Dialog.getNumber();
+			lMax = Dialog.getNumber();
+			aMin = Dialog.getNumber();
+			aMax = Dialog.getNumber();
+			bMin = Dialog.getNumber();
+			bMax = Dialog.getNumber();
+
+
+			setBatchMode(true);
+
+			// Canvas A* B*
+			//=================================
+			newImage("col", "32-bit black", 500, 500, 3);
+			setSlice(1);
+			run("Set...", "value=50");
+
+
+			setSlice(2);
+			for(i=0; i<500;i++){
+
+			tStr = i/500;
+			tStr = tStr*(aMax-aMin) + aMin;
+			setColor(tStr);
+			fillRect(i,0,1,500);
+			}
+
+
+
+			setSlice(3);
+			for(i=0; i<500;i++){
+
+			tStr = i/500;
+			tStr = tStr*(bMax-bMin) + bMin;
+
+			setColor(tStr);
+			fillRect(0,i,500,1);
+			}
+
+
+
+			run("CIELAB 32Bit to RGB24 smooth");
+			rename("A* B* Space");
+			close("col");
+
+
+			// Canvas Luminance
+			//=================================
+			newImage("col", "32-bit black", 50, 500, 3);
+			setSlice(2);
+			run("Set...", "value=0");
+			setSlice(3);
+			run("Set...", "value=0");
+
+			setSlice(1);
+			for(i=0; i<500;i++){
+
+			tStr = i/500;
+			tStr = (1-tStr);
+			tStr = tStr*(lMax-lMin) + lMin;
+			setColor(tStr);
+			fillRect(0,i,50,1);
+			}
+
+			run("CIELAB 32Bit to RGB24 smooth");
+			rename("L* Space");
+			close("col");
+
+			newImage("ColourSpace", "RGB black", 625, 550, 1);
+				setLineWidth(2);
+				setColor("white");
+				selectImage("L* Space");
+				run("Copy");
+				selectImage("ColourSpace");
+				makeRectangle(550,25, 50, 500);
+				run("Paste");
+				drawRect(550,25, 50, 500);
+
+				selectImage("A* B* Space");
+				run("Copy");
+				selectImage("ColourSpace");
+				makeRectangle(25,25, 500, 500);
+				run("Paste");
+				drawRect(25,25, 500, 500);
+
+			run("Select None");
+			close("A* B* Space");
+			close("L* Space");
+
+			setBatchMode("Show");
+
+			colourHappyGate = getBoolean("Are you happy with this colour space?", "Yes", "No, try again");
+			}
+			} // (repat ask if)
+			colourSpace = Array.concat(colourSpace,lMin,lMax,aMin,aMax,bMin,bMax); 
+
+			} //(loop)
+			if(isOpen("ColourSpace")){
+			close("ColourSpace");
+			}
+} //(if Custom)
+
+
+
+
+
+
+// v) Generate Folders
+//-------------------------------------------------
+//...........................................................................................................................................................................
+
+
+for(i=0; i<TLeng; i ++){
+for(j=0; j<RLeng; j ++){
+makeStr = camoWildExpDir + listTreatments[i] + "_R"+j+1+"/";
+File.makeDirectory(makeStr);
+
+colourSpaceSplit = Array.slice(colourSpace,i*6,(i*6)+6);
+colourSpaceStr = String.join(colourSpaceSplit , "\t");
+
+dataFile = File.open(makeStr+"PopulationSettings.txt");
+print(dataFile, "Treatment: "+"\t"+listTreatments[i]);
+print(dataFile, "Repeat: "+"\t"+j+1);
+print(dataFile, "ColourSpace: "+"\t"+colourSpaceStr);
+print(dataFile, "GroupSize: "+"\t"+groupSize);
+print(dataFile, "GroupMethod: "+"\t"+groupMethod);
+print(dataFile, "TargetSize(mm): "+"\t"+targetSize);
+print(dataFile, "TargetShape: "+"\t"+targetShape);
+print(dataFile, "PrintSetting: "+"\t"+dimensionString);
+
+File.close(dataFile);
+
+
+
+} // ( j )
+} // ( i )
+
+
+
+// vi) Choose Algorithm Settings
+//-------------------------------------------------
+//...........................................................................................................................................................................
+
+algorithmDefault = newArray("No", "Yes");
+Dialog.createNonBlocking("Step 4, Algorithm Settings");
+Dialog.addMessage(    ".........................................................\nAdjust Algorithm Settings:\n.........................................................\nChoose whether you would like to use the default or change the algorithm settings");
+	Dialog.addMessage("NOTE 1: changing the settings will take you to a new dialog set.");
+	Dialog.addMessage("NOTE 2: if grouping individuals, we recommend deleting 1 individual per group.");
+	Dialog.addChoice("       Change?",algorithmDefault, "No");
+Dialog.show();
+
+algorithmChoice =  Dialog.getChoice();
+
+if(algorithmChoice == "Yes"){
+run("Edit Algorithm Wild");
+}
+
+
+// vi) Apply Algorithm and Colour Settings
+//--------------------------------------------------------
+//...........................................................................................................................................................................
+colArrayTitles = newArray("Lmin", "Lmax");
+
+for(j=0; j<RLeng; j ++){
+for(i=0; i<TLeng; i ++){
+
+//Algorithm
+//---------------
+folderPath = camoWildExpDir + listTreatments[i] + "_R"+j+1+"/";
+
+PopLocation=folderPath;
+
+fromPath = getDirectory("plugins") + "3 CamoWild/AlgorithmSettings.txt";
+toPath = folderPath + "AlgorithmSettings.txt";
+File.copy(fromPath, toPath);
+
+dataFile = File.open(getDirectory("plugins") +"3 CamoWild/PopLocation.txt");
+print(dataFile, folderPath);
+File.close(dataFile);
+
+if(startType=="Random"){
+		populatorDirectory1= "select_folder=[" + PopLocation+ "]";
+
+		populatorDirectory2= " select_template=[" + getDirectory("plugins") + "3 CamoWild/Genotype_Template.txt]";
+
+		populatorDirectory = populatorDirectory1+populatorDirectory2;
+
+		run("ImageGA Populator", populatorDirectory);
+		
+		run("Colour Space Modifier");
+}
+
+if(startType=="Matched"){
+	if(i==0){
+
+		populatorDirectory1= "select_folder=[" + PopLocation+ "]";
+
+		populatorDirectory2= " select_template=[" + getDirectory("plugins") + "3 CamoWild/Genotype_Template.txt]";
+
+		populatorDirectory = populatorDirectory1+populatorDirectory2;
+
+		run("ImageGA Populator", populatorDirectory);
+		
+		run("Colour Space Modifier");
+		
+	} else {
+
+	genCopy  = camoWildExpDir + listTreatments[0] + "_R"+j+1+"/gen_0_genes.txt";
+	genPaste  = camoWildExpDir + listTreatments[i] + "_R"+j+1+"/gen_0_genes.txt";
+
+	File.copy(genCopy,genPaste);
+	} // (else)
+
+	
+
+} //   (if)
+
+
+if(startType=="Shared"){
+	if(i==0 && j==0){
+
+		populatorDirectory1= "select_folder=[" + PopLocation+ "]";
+
+		populatorDirectory2= " select_template=[" + getDirectory("plugins") + "3 CamoWild/Genotype_Template.txt]";
+
+		populatorDirectory = populatorDirectory1+populatorDirectory2;
+
+		run("ImageGA Populator", populatorDirectory);
+		
+		run("Colour Space Modifier");
+
+	} else {
+
+	genCopy  = camoWildExpDir + listTreatments[0] + "_R"+0+1+"/gen_0_genes.txt";
+	genPaste  = camoWildExpDir + listTreatments[i] + "_R"+j+1+"/gen_0_genes.txt";
+
+	File.copy(genCopy,genPaste);
+	} // (else)
+
+} //   (if)
+
+GenerationString = File.openAsString(camoWildExpDir + listTreatments[i] + "_R"+j+1+"/gen_0_genes.txt");
+GenerationRows = split(GenerationString,"\n");
+
+PatternTemplate =  getDirectory("plugins") + "3 CamoWild/PopulationTemplate.txt";
+	
+dataFile = File.open(PatternTemplate);
+	
+	for(p=0; p<GenerationRows.length; p++){	// writes the pattern genome to a temporary text file, which the target generator then uses.
+	
+	print(dataFile, GenerationRows[p]);
+	
+	}
+	File.close(dataFile);
+
+setBatchMode(true);
+run("Generate Prey Patterns");
+
+WinNam = getList("image.titles");
+Win = lengthOf(WinNam);
+
+File.makeDirectory( folderPath + "GenPat_0/");
+
+for ( p=0; p<Win; p++ ) { 
+
+pat = "/" + WinNam[p] + ".png";
+
+PatternPath =folderPath + "GenPat_0/" + pat;
+
+selectWindow(WinNam[p]);
+
+if(endsWith(WinNam[p], ".png")){
+close(WinNam[p]);
+} else {
+
+if(startsWith(WinNam[p], "Gen")){
+
+saveAs("PNG", PatternPath); 
+
+close(WinNam[p]+".png");
+
+}
+}
+}
+
+
+run("Generate Prey Sheet");
+
+} // ( i )
+} // ( j )
+
+
+
+Dialog.create("Step 5, Get Printing");
+	Dialog.addMessage("All completed and all ready to print!");
+Dialog.show();
+
+
+
+
+
+

@@ -1,0 +1,134 @@
+// i) Get the Population Location
+//-------------------------------------------------
+//...........................................................................................................................................................................
+
+Dialog.create("");
+	Dialog.addMessage("Step 1, Select Population");
+Dialog.show();
+
+populationDir = getDirectory("Select the Population you wish to upload the rankings to");
+
+// ii) Count generation and survival
+//-------------------------------------------------
+//...........................................................................................................................................................................
+
+GeneratList  =  getFileList(populationDir);
+GeneratArray = newArray();
+GenSurvArray  = newArray();
+
+for(i=0; i<GeneratList.length; i++) { // list all .txt files
+
+	if(startsWith(GeneratList[i], "generation")==1 && endsWith(GeneratList[i], "_survival.txt")!=1){
+		GeneratArray = Array.concat(GeneratArray, GeneratList[i]);
+	}	
+
+	if(endsWith(GeneratList[i], "_survival.txt")==1){
+		GenSurvArray = Array.concat(GenSurvArray, GeneratList[i]);
+	}											
+		
+}
+
+// iii) Continue Check
+//-------------------------------------------------
+// If there is already enough survival entries the system will stop.
+//...........................................................................................................................................................................
+
+if(GenSurvArray.length==GeneratArray.length){
+Dialog.create("");
+	Dialog.addMessage("STOP, you already have a survival entry for the most recent generation");
+Dialog.show();
+exit
+}
+
+
+if(GenSurvArray.length<GeneratArray.length){
+
+
+// iv) Generate ID array list
+//-------------------------------------------------
+//...........................................................................................................................................................................
+
+genNum = GeneratArray.length-1;
+currentGen = "generation_"+genNum+".txt";
+currentGenPath = populationDir + currentGen;
+currentSurv = "generation_"+genNum+"_survival.txt";
+currentSurvPath = populationDir +currentSurv;
+
+genString = File.openAsString(currentGenPath);
+genRows = split(genString, "\n");
+
+arrayIDs = newArray(genRows.length);
+for(i=0 ; i<arrayIDs.length;i++){
+tArr = split(genRows[i], "\t");
+tStr = tArr[0];
+arrayIDs[i] = tStr ;
+}
+
+// v) Generate fitness dialog
+//-------------------------------------------------
+//...........................................................................................................................................................................
+
+Dialog.createNonBlocking("Step 2, Enter Fitness");
+
+Dialog.addMessage("Type the Fitness Value for each ID");
+for(k=1; k<arrayIDs.length ; k++){
+Dialog.addNumber("		"+arrayIDs[k],0);
+}
+Dialog.show();
+
+arrayFit = newArray(arrayIDs.length);
+arrayFit[0] = "Fitness";
+
+for(k=1; k<arrayFit.length ; k++)	{
+arrayFit[k] = Dialog.getNumber();
+}
+
+
+
+// vi) Save Values
+//-------------------------------------------------
+//...........................................................................................................................................................................
+
+
+	dataFile = File.open(currentSurvPath);
+	
+	for(i=0; i<arrayFit.length; i++){
+	saveArray = newArray(arrayIDs[i], arrayFit[i]);
+	saveStr = String.join(saveArray, "\t");
+	print(dataFile, saveStr);
+	}
+	File.close(dataFile);
+
+
+// vii) Confirm Completion
+//-------------------------------------------------
+//...........................................................................................................................................................................
+if(File.exists(currentSurvPath)){
+Dialog.create("Step 3, Generate");
+	Dialog.addMessage("The Survival File has been sucessfully saved!");
+	Dialog.addMessage("Would you like to create the next generation?");
+	 Dialog.addCheckbox("	Yes or No?", 1)
+Dialog.show();
+}
+
+evolveGate = Dialog.getCheckbox();
+if(evolveGate == 1){
+pathPrintStr = "select="+populationDir;
+run("ImageGA Algorithm",pathPrintStr);
+}
+
+
+
+
+Dialog.create("");
+	Dialog.addMessage("Generation Complete! You'll find the new population sheet ready to print!");
+Dialog.show();
+
+	
+
+} // If Sv < Gen end
+
+
+
+
+

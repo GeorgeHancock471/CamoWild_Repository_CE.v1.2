@@ -1,0 +1,8 @@
+2
+3
+Random
+Custom
+4
+Random
+400
+7	60	60	2

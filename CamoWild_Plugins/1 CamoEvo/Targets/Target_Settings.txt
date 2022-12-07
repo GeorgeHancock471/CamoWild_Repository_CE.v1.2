@@ -1,0 +1,3 @@
+ID	Shape	Size	Pattern	Centre	minAngle	maxAngle	shader(a)	details(a)	bilateral?	
+Exp_Oval	Oval_Game	362	Wild	200	-180	180	0.6	0.5	no
+Print_Oval	Oval_Print	400	Wild	200	-180	180	0	0	no
