@@ -21,8 +21,6 @@ This includes all of the plugins used for the "Adaptive Genetic ALgorithms for A
 For more accessible versions of the [Printer Sheet] and [Measurent] plugins, please download CamoEvo V2.0+
 
 	o. CamoWild_Plugins, just contains the altered plugins and the unique plugins to CamoWild. Too install download CamoEvo v1.2 and ImageJ and copy over the plugins to the plugins folder.
-	
-	o. CamoWild_Windows_(CE_v1.2), includes all the CamoWild plugins and CamoEvo v1.2 for the windows version of ImageJ.
 
 	o. AlgorithmSettings, the ImageGA settings used for the avian and human experiments.
 
@@ -359,6 +357,66 @@ used for the wild birds.
 
 
 
+
+
+
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+7. micaToolbox/RNL Colour Maps (Modified)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+These are modified versions of the original micaToolbox RNL colour map scripts. These were made to allow the RNL colour difference measure to be used
+without generating a plot (for faster batch analyses). As well as a new colour 'distance' measure. Which measures the 2D/3D RNL colour distance between 
+each RNL colour of two ROIs.
+
+
+	i) 1.0)_Create_RNL_Colour_Maps_From_ROIs (relabeled)
+	====================================================
+	
+	Relabel of the original in the micaToolbox. This will create a map for a selected ROI.
+	
+	ii) 2.0)_Combine_RNL_Colour_Maps (relabeled)
+	====================================================
+	
+	Relabel of the original in the micaToolbox. Meges RNL colour maps into a single map.
+	
+	iii) 3.0)_Plot_and_Compare_RNL_Colour_Maps (relabeled)
+	====================================================
+	
+	Relabel of the original in the micaToolbox. Measures the difference in frequency of RNL colours and plots the space.
+	
+	
+	iv) 3.5)_Compare_RNL_Colour_Maps (unique)
+	====================================================
+	
+	A copy of the plot and compare RNL colour maps function which does not produce the plot. (Useful for batch analyses).
+	
+		
+	iv) 4.0)_Compare_RNL_Distance
+	====================================================
+	
+	Measures the asymmetrical distance in RNL colour between two ROIs. With the following parameters.
+	
+		Threshold: Determines what % of the RNL colour map is used. Removing values with low frequencies.
+				   Alternatively Acuity View of FFS can be used to remove infrequent colours / noise.
+				   
+		Metric: 'Mean'. For every thresholded colour the 2D/3D radial distance is calculated between each map.
+					  If a colour is present in both maps then the distance = 0. If the colour is absent then		
+					  the minimum distance to an adjacent colour is used. The mean is then the average colour 
+					  distance for each colour.
+					  
+				'Max'. See above. Instead of using the mean distance uses the max of all distances.
+		
+
+		Frequency Weighting: If enabled then the colour distances are weighted by their frequency within the RNL colour maps.
+							 The more frequent a non-matching colour the greater the distance.
+							 
+		
+	For any two RNL maps their will be two measures. The y axis is the external ROI and the x axis is the internal ROI. For example
+	When comparing a moth to its bark background. To compare the distance of the moth into the bark you would use Bark:Moth, if I
+	instad wished to compare the bark into the moth you would use Moth:Bark. 
+
+	
 ---------------------------------------------------------------------------------------------------------------------------------------------------------
 
 3) PRINTER EXPERIMENT INSTUCTIONS 
